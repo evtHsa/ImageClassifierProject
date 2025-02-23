@@ -102,6 +102,30 @@ def get_model(args, sets):
     print(model)
     return model
 
+def load_chkpt(args, model):
+    path = args.chkpt_pth
+    if torch.cuda.device_count():
+        checkpoint = torch.load(path)
+    else: #map_location=torch.device("cpu"
+        checkpoint = torch.load(path, map_location=torch.device("cpu"))
+        
+    import pdb;pdb.set_trace()
+    assert(checkpoint['arch'] == args.model[0])
+    
+        
+    model.arch         = checkpoint['arch'] 
+    model.epoch        = checkpoint['epoch'] 
+    model.step         = checkpoint['step'] 
+    model.features     = checkpoint ['features']
+    model.class_to_idx = checkpoint ['class_to_idx']
+    model.classifier   = checkpoint ['classifier']
+    model.optimizer    = checkpoint ['optimizer']
+    model.losslog      = checkpoint['losslog']
+    model.load_state_dict(checkpoint ['state_dict'])
+    # no need to refreeze pretrained parameters
+    
+    return None # in case the unwary expect this to create and return the model
+
 
 def main(args):
     print("boy howdy2")
@@ -114,6 +138,8 @@ def main(args):
         cat_to_name = json.load(f)
     
     model = get_model(args, sets)
+    if args.chkpt_pth:
+        load_chkpt(args, model)
     import pdb;pdb.set_trace()
 
 
@@ -126,6 +152,7 @@ parser.add_argument('--lr', type=range_0_1, action="store", default=16)
 parser.add_argument('--criterion', nargs=1, choices=['NLLLoss'], default='NLLLoss')
 parser.add_argument('--dev', nargs=1, choices=['cpu', 'cuda'], default='cpu')
 parser.add_argument('--model', nargs=1, choices=['vgg16'], default='vgg16')
+parser.add_argument('--chkpt-pth', action="store",  default='/tmp/chkpt.pth')
 
 args = parser.parse_args()
 args.criterion = get_fn_obj(args.criterion)
