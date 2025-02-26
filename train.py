@@ -1,6 +1,6 @@
 #
 
-# python train.py --data-dir ~/tmp/flowers --epochs 0 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16  --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth
+#python train.py --data-dir ~/tmp/flowers --epochs 7 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 1 --optimizer Adam
 #
 import torch
 import time
@@ -97,10 +97,23 @@ def get_model(args, sets):
         param.requires_grad = False
     
     model.classifier = nn.Sequential(get_classifier())
-    optimizer = optim.Adam(model.classifier.parameters(), lr=args.lr)
+    model.criterion = args.criterion
     model.to(args.dev);    
     print(model)
     return model
+
+def save_chkpt(model, epoch, step):
+    import pdb;pdb.set_trace()
+    checkpoint = {'arch'        : model.arch,
+                  'epoch'       : epoch,
+                  'step'        : step,
+                  'features'    : model.features,
+                  'class_to_idx': model.class_to_idx,
+                  'classifier'  : model.classifier,
+                  'state_dict'  : model.state_dict(),
+                  'losslog'     : model.losslog
+                 }
+    torch.save(checkpoint, chkpt_pth)
 
 def load_chkpt(args, model):
     path = args.chkpt_pth
@@ -109,7 +122,6 @@ def load_chkpt(args, model):
     else: #map_location=torch.device("cpu"
         checkpoint = torch.load(path, map_location=torch.device("cpu"))
         
-    import pdb;pdb.set_trace()
     assert(checkpoint['arch'] == args.model[0])
     
         
@@ -119,14 +131,80 @@ def load_chkpt(args, model):
     model.features     = checkpoint ['features']
     model.class_to_idx = checkpoint ['class_to_idx']
     model.classifier   = checkpoint ['classifier']
-    model.optimizer    = checkpoint ['optimizer']
     model.losslog      = checkpoint['losslog']
     model.load_state_dict(checkpoint ['state_dict'])
     # no need to refreeze pretrained parameters
-    
+    print("checkpoint loaded")
     return None # in case the unwary expect this to create and return the model
 
+def show_elapsed_mins(t0):
+    elapsed_min = (time.time() - t0) / 60
+    print(f"\t elapsed(min) = {elapsed_min:.2f}")
 
+def do_train(args, loaders, model):
+    steps = 0
+    running_loss = 0
+    chkpt_every = 10
+    t0 = time.time()
+    train_ldr = loaders['train']
+    test_ldr = loaders['test']
+    valid_ldr = loaders['valid']
+    x = args.optimizer[0]
+    optimizer_ctor = getattr(torch.optim, args.optimizer[0])
+    optimizer = optimizer_ctor(model.classifier.parameters(), lr=args.lr)
+
+    import pdb;pdb.set_trace()
+    for epoch in range(model.epoch, args.epochs): 
+        print("epoch: " + str(epoch))
+
+        for inputs, labels in train_ldr:
+            steps += 1
+
+            # Move input and label tensors to the default device
+            inputs, labels = inputs.to(args.dev), labels.to(args.dev)        
+            optimizer.zero_grad()
+            logps = model.forward(inputs)
+            loss = args.criterion(logps, labels)
+            loss.backward()
+            optimizer.step()
+        
+            if steps % args.chkpt_every == 0:
+                show_elapsed_mins(t0)
+                print(f"\t saving checkpt at step {steps}")
+                save_chkpt(model, optimizer, epoch, steps)            
+
+            running_loss += loss.item()
+
+            if steps % args.print_every == 0:
+                print(f"step {steps}")
+                show_elapsed_mins(t0)
+                test_loss = 0
+                accuracy = 0
+                model.eval()
+                with torch.no_grad():
+                    for inputs, labels in valid_ldr:
+                        inputs, labels = inputs.to(args.dev), labels.to(args.dev)
+                        logps = model.forward(inputs)
+                        batch_loss = args.criterion(logps, labels)
+                    
+                        test_loss += batch_loss.item()
+                    
+                        # Calculate accuracy
+                        ps = torch.exp(logps)
+                        top_p, top_class = ps.topk(1, dim=1)
+                        equals = top_class == labels.view(*top_class.shape)
+                        accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
+             
+                stats = {'epoch' : f"{epoch+1}/{args.epochs}",
+                         'train_loss'    : f"{running_loss/args.print_every:.3f}",
+                         'test_loss'     : f"{test_loss/len(test_ldr):.3f} ",
+                         'test_accuracy' : f"{accuracy/len(test_ldr):.3f}"}
+
+                print(stats)
+                model.losslog.append(stats)
+                running_loss = 0
+                model.train()
+                
 def main(args):
     print("boy howdy2")
     sets = dict()
@@ -136,11 +214,14 @@ def main(args):
     
     with open('cat_to_name.json', 'r') as f:
         cat_to_name = json.load(f)
-    
+
+    args.criterion = getattr(nn, args.criterion[0])() # the trailing () matters
+    args.dev = torch.device(args.dev[0])
     model = get_model(args, sets)
+    
     if args.chkpt_pth:
         load_chkpt(args, model)
-    import pdb;pdb.set_trace()
+    do_train(args, ldrs, model)
 
 
 #############################################################################
@@ -150,12 +231,15 @@ parser.add_argument('--epochs', type=gte_0, action="store", default=3)
 parser.add_argument('--batch-size', type=gt_0, action="store", default=16)
 parser.add_argument('--lr', type=range_0_1, action="store", default=16)
 parser.add_argument('--criterion', nargs=1, choices=['NLLLoss'], default='NLLLoss')
+parser.add_argument('--optimizer', nargs=1, choices=['Adam'], default='Adam')
 parser.add_argument('--dev', nargs=1, choices=['cpu', 'cuda'], default='cpu')
 parser.add_argument('--model', nargs=1, choices=['vgg16'], default='vgg16')
 parser.add_argument('--chkpt-pth', action="store",  default='/tmp/chkpt.pth')
+parser.add_argument('--chkpt-every', action="store",  default=25,
+                    help="checckpoint every this many training steps")
+parser.add_argument('--print-every', action="store",  default=25,
+                    help="print stats every this many training steps")
 
 args = parser.parse_args()
-args.criterion = get_fn_obj(args.criterion)
-args.dev = torch.device(args.dev[0])
 
 main(args)
