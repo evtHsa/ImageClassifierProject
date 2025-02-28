@@ -1,6 +1,6 @@
 #
 
-#python train.py --data-dir ~/tmp/flowers --epochs 7 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 1 --optimizer Adam
+#python train.py --data-dir ~/tmp/flowers --epochs 7 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 10 --optimizer Adam --chkpt-every 100
 #
 import torch
 import time
@@ -103,7 +103,6 @@ def get_model(args, sets):
     return model
 
 def save_chkpt(model, epoch, step):
-    import pdb;pdb.set_trace()
     checkpoint = {'arch'        : model.arch,
                   'epoch'       : epoch,
                   'step'        : step,
@@ -113,14 +112,13 @@ def save_chkpt(model, epoch, step):
                   'state_dict'  : model.state_dict(),
                   'losslog'     : model.losslog
                  }
-    torch.save(checkpoint, chkpt_pth)
+    torch.save(checkpoint, args.chkpt_pth)
 
 def load_chkpt(args, model):
-    path = args.chkpt_pth
     if torch.cuda.device_count():
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(args.chkpt_pth)
     else: #map_location=torch.device("cpu"
-        checkpoint = torch.load(path, map_location=torch.device("cpu"))
+        checkpoint = torch.load(args.chkpt_pth, map_location=torch.device("cpu"))
         
     assert(checkpoint['arch'] == args.model[0])
     
@@ -142,7 +140,10 @@ def show_elapsed_mins(t0):
     print(f"\t elapsed(min) = {elapsed_min:.2f}")
 
 def do_train(args, loaders, model):
-    steps = 0
+    if model.step:
+        steps = model.step
+    else:
+        steps = 0
     running_loss = 0
     chkpt_every = 10
     t0 = time.time()
@@ -153,7 +154,6 @@ def do_train(args, loaders, model):
     optimizer_ctor = getattr(torch.optim, args.optimizer[0])
     optimizer = optimizer_ctor(model.classifier.parameters(), lr=args.lr)
 
-    import pdb;pdb.set_trace()
     for epoch in range(model.epoch, args.epochs): 
         print("epoch: " + str(epoch))
 
@@ -167,15 +167,15 @@ def do_train(args, loaders, model):
             loss = args.criterion(logps, labels)
             loss.backward()
             optimizer.step()
-        
-            if steps % args.chkpt_every == 0:
+
+            if steps % int(args.chkpt_every) == 0:
                 show_elapsed_mins(t0)
                 print(f"\t saving checkpt at step {steps}")
-                save_chkpt(model, optimizer, epoch, steps)            
+                save_chkpt(model, epoch, steps)            
 
             running_loss += loss.item()
 
-            if steps % args.print_every == 0:
+            if steps % int(args.print_every) == 0:
                 print(f"step {steps}")
                 show_elapsed_mins(t0)
                 test_loss = 0
@@ -195,8 +195,8 @@ def do_train(args, loaders, model):
                         equals = top_class == labels.view(*top_class.shape)
                         accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
              
-                stats = {'epoch' : f"{epoch+1}/{args.epochs}",
-                         'train_loss'    : f"{running_loss/args.print_every:.3f}",
+                stats = {'epoch' : f"{epoch+1}/{int(args.epochs)}",
+                         'train_loss'    : f"{running_loss/int(args.print_every):.3f}",
                          'test_loss'     : f"{test_loss/len(test_ldr):.3f} ",
                          'test_accuracy' : f"{accuracy/len(test_ldr):.3f}"}
 
@@ -206,7 +206,6 @@ def do_train(args, loaders, model):
                 model.train()
                 
 def main(args):
-    print("boy howdy2")
     sets = dict()
     ldrs = dict()
     build_data_loaders(args, sets, ldrs)
