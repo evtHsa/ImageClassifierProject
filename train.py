@@ -1,22 +1,19 @@
 #
 
-#python train.py --data-dir ~/tmp/flowers --epochs 7 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 10 --optimizer Adam --chkpt-every 100
+#python train.py --data-dir ~/tmp/flowers --epochs 12 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 50 --optimizer Adam --chkpt-every 100
 #
-import torch
-import time
 import matplotlib.pyplot as plt
-from torch import nn
-from torch import optim
-from torchvision import datasets, transforms, models
-import time
 from collections import OrderedDict
 import os
-import math
 import numpy as np
 from PIL import Image
 import argparse
 import seaborn as sb
 import json
+import util as ut
+import torch
+from torch import nn
+import time
 
 def gt_0(val):
     v = int(val)
@@ -33,75 +30,6 @@ def range_0_1(val):
     if f >= 0 and f <= 1: return f
     raise argparse.ArgumentTypeError(f"{val} is not in [0,1]")
     
-def get_fn_obj(val):
-    if len(val) == 1 and val[0] == 'NLLLoss':
-        return nn.NLLLoss
-    raise argparse.ArgumentTypeError(f"{val} is not a criterion we understand")
-
-# 
-def build_data_loaders(args, sets, loaders):
-    # simplified from part 1
-    train_xform = transforms.Compose([transforms.RandomRotation(30),
-                                      transforms.RandomResizedCrop(224),
-                                      transforms.RandomHorizontalFlip(),
-                                      transforms.ToTensor(),
-                                      transforms.Normalize([0.485, 0.456, 0.406],
-                                                           [0.229, 0.224, 0.225])])
-    valid_xform =transforms.Compose([transforms.Resize(255),
-                                     transforms.CenterCrop(224),
-                                     transforms.ToTensor(),
-                                     transforms.Normalize([0.485, 0.456, 0.406],
-                                                          [0.229, 0.224, 0.225])])
-    test_xform = valid_xform
-
-    # create data sets
-    sets['train'] = datasets.ImageFolder(args.data_dir + "/train",
-                                         transform=train_xform)
-    sets['test'] = datasets.ImageFolder(args.data_dir + "/test",
-                                         transform=train_xform)
-    sets['valid'] = datasets.ImageFolder(args.data_dir + "/valid",
-                                         transform=train_xform)
-
-    loaders['train'] = torch.utils.data.DataLoader(sets['train'],
-                                                   batch_size=args.batch_size,
-                                                   shuffle=True)
-    # don't shuffle for test and validate
-    loaders['test'] = torch.utils.data.DataLoader(sets['test'],
-                                                  batch_size=args.batch_size)
-
-    loaders['valid'] = torch.utils.data.DataLoader(sets['valid'],
-                                                 batch_size=args.batch_size)
-
-def show_loader_info(args, sets, loaders):
-    for key in sets.keys():
-        print(f"dataset len({key}) = " + str(len(sets[key])))
-        print(f"dataldr len({key}) = " + str(len(loaders[key])))
-
-    print(f"steps/epoch = {math.ceil(len(loaders['train']) / args.batch_size)}")
-
-def get_classifier():
-    dict = OrderedDict([('fc1', nn.Linear(25088, 4096)),
-                        ('relu', nn.ReLU()), 
-                        ('fc2', nn.Linear(4096, 102)),
-                        ('output', nn.LogSoftmax(dim=1))])
-    classifier = nn.Sequential(dict)
-    return classifier
-    
-def get_model(args, sets):
-    mod_name = args.model[0]
-    ctor = getattr(models, mod_name)
-    model = ctor(pretrained=True)
-    model.arch = mod_name
-    model.class_to_idx = sets['train'].class_to_idx
-    for param in model.parameters(): #freeze parms
-        param.requires_grad = False
-    
-    model.classifier = nn.Sequential(get_classifier())
-    model.criterion = args.criterion
-    model.to(args.dev);    
-    print(model)
-    return model
-
 def save_chkpt(model, epoch, step):
     checkpoint = {'arch'        : model.arch,
                   'epoch'       : epoch,
@@ -113,31 +41,6 @@ def save_chkpt(model, epoch, step):
                   'losslog'     : model.losslog
                  }
     torch.save(checkpoint, args.chkpt_pth)
-
-def load_chkpt(args, model):
-    if torch.cuda.device_count():
-        checkpoint = torch.load(args.chkpt_pth)
-    else: #map_location=torch.device("cpu"
-        checkpoint = torch.load(args.chkpt_pth, map_location=torch.device("cpu"))
-        
-    assert(checkpoint['arch'] == args.model[0])
-    
-        
-    model.arch         = checkpoint['arch'] 
-    model.epoch        = checkpoint['epoch'] 
-    model.step         = checkpoint['step'] 
-    model.features     = checkpoint ['features']
-    model.class_to_idx = checkpoint ['class_to_idx']
-    model.classifier   = checkpoint ['classifier']
-    model.losslog      = checkpoint['losslog']
-    model.load_state_dict(checkpoint ['state_dict'])
-    # no need to refreeze pretrained parameters
-    print("checkpoint loaded")
-    return None # in case the unwary expect this to create and return the model
-
-def show_elapsed_mins(t0):
-    elapsed_min = (time.time() - t0) / 60
-    print(f"\t elapsed(min) = {elapsed_min:.2f}")
 
 def do_train(args, loaders, model):
     if model.step:
@@ -169,7 +72,7 @@ def do_train(args, loaders, model):
             optimizer.step()
 
             if steps % int(args.chkpt_every) == 0:
-                show_elapsed_mins(t0)
+                ut.show_elapsed_mins(t0)
                 print(f"\t saving checkpt at step {steps}")
                 save_chkpt(model, epoch, steps)            
 
@@ -177,7 +80,7 @@ def do_train(args, loaders, model):
 
             if steps % int(args.print_every) == 0:
                 print(f"step {steps}")
-                show_elapsed_mins(t0)
+                ut.show_elapsed_mins(t0)
                 test_loss = 0
                 accuracy = 0
                 model.eval()
@@ -208,18 +111,18 @@ def do_train(args, loaders, model):
 def main(args):
     sets = dict()
     ldrs = dict()
-    build_data_loaders(args, sets, ldrs)
-    show_loader_info(args, sets, ldrs)
+    ut.build_data_loaders(args, sets, ldrs)
+    ut.show_loader_info(args, sets, ldrs)
     
     with open('cat_to_name.json', 'r') as f:
         cat_to_name = json.load(f)
 
     args.criterion = getattr(nn, args.criterion[0])() # the trailing () matters
     args.dev = torch.device(args.dev[0])
-    model = get_model(args, sets)
+    model = ut.get_model(args, sets)
     
     if args.chkpt_pth:
-        load_chkpt(args, model)
+        ut.load_chkpt(args, model)
     do_train(args, ldrs, model)
 
 
