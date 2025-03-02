@@ -122,6 +122,7 @@ def main(args):
         ut.load_chkpt(args, model)
 
     ut.do_test(args, model)
+    model.to(args.dev[0]);    
     do_train(args, ldrs, model)
 
 
