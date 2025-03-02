@@ -125,6 +125,8 @@ def main(args):
     
     if args.chkpt_pth:
         ut.load_chkpt(args, model)
+
+    ut.do_test(args, model)
     do_train(args, ldrs, model)
 
 

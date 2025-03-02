@@ -103,6 +103,24 @@ def show_elapsed_mins(t0):
     elapsed_min = (time.time() - t0) / 60
     print(f"\t elapsed(min) = {elapsed_min:.2f}")
 
+def do_test(args, model):
+    test_loader = loaders['test']
+    print("testing")
+    correct = 0
+    total = 0
+    n = 0
+    with torch.no_grad():
+        for data in test_loader:
+            print(f"\t n = {n}");n += 1
+            images, labels = data[0].to(args.dev), data[1].to(args.dev)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    accuracy = 100 * correct / total
+    img_cnt = len(sets['test'])
+    print(f"Accuracy of the network on the {img_cnt} test images {accuracy}%")
+
 def common_train_predict_args(parser):
     parser.add_argument('--data-dir', action="store", default='')
     parser.add_argument('--dev', nargs=1, choices=['cpu', 'cuda'], default='cpu')
