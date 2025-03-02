@@ -132,6 +132,8 @@ def main(args):
 
 #############################################################################
 parser = argparse.ArgumentParser(description='Example with long option names')
+ut.common_train_predict_args(parser)
+
 parser.add_argument('--epochs', type=gte_0, action="store", default=3)
 parser.add_argument('--batch-size', type=gt_0, action="store", default=16)
 parser.add_argument('--lr', type=range_0_1, action="store", default=16)
@@ -141,7 +143,6 @@ parser.add_argument('--chkpt-every', action="store",  default=25,
                     help="checckpoint every this many training steps")
 parser.add_argument('--print-every', action="store",  default=25,
                     help="print stats every this many training steps")
-ut.common_train_predict_args(parser)
 
 args = parser.parse_args()
 
