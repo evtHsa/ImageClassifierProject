@@ -130,19 +130,16 @@ def main(args):
 
 #############################################################################
 parser = argparse.ArgumentParser(description='Example with long option names')
-parser.add_argument('--data-dir', action="store", default='')
 parser.add_argument('--epochs', type=gte_0, action="store", default=3)
 parser.add_argument('--batch-size', type=gt_0, action="store", default=16)
 parser.add_argument('--lr', type=range_0_1, action="store", default=16)
 parser.add_argument('--criterion', nargs=1, choices=['NLLLoss'], default='NLLLoss')
 parser.add_argument('--optimizer', nargs=1, choices=['Adam'], default='Adam')
-parser.add_argument('--dev', nargs=1, choices=['cpu', 'cuda'], default='cpu')
-parser.add_argument('--model', nargs=1, choices=['vgg16'], default='vgg16')
-parser.add_argument('--chkpt-pth', action="store",  default='/tmp/chkpt.pth')
 parser.add_argument('--chkpt-every', action="store",  default=25,
                     help="checckpoint every this many training steps")
 parser.add_argument('--print-every', action="store",  default=25,
                     help="print stats every this many training steps")
+ut.common_train_predict_args(parser)
 
 args = parser.parse_args()
 

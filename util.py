@@ -103,3 +103,8 @@ def show_elapsed_mins(t0):
     elapsed_min = (time.time() - t0) / 60
     print(f"\t elapsed(min) = {elapsed_min:.2f}")
 
+def common_train_predict_args(parser):
+    parser.add_argument('--data-dir', action="store", default='')
+    parser.add_argument('--dev', nargs=1, choices=['cpu', 'cuda'], default='cpu')
+    parser.add_argument('--model', nargs=1, choices=['vgg16'], default='vgg16')
+    parser.add_argument('--chkpt-pth', action="store",  default='/tmp/chkpt.pth')
