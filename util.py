@@ -69,13 +69,10 @@ def get_model(args):
     ctor = getattr(models, mod_name)
     model = ctor(pretrained=True)
     model.arch = mod_name
-    model.class_to_idx = sets['train'].class_to_idx
+
     for param in model.parameters(): #freeze parms
         param.requires_grad = False
     
-    model.classifier = nn.Sequential(get_classifier())
-    model.criterion = args.criterion
-    model.to(args.dev);    
     print(model)
     return model
 
