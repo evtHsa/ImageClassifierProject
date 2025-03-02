@@ -116,7 +116,7 @@ def main(args):
 
     args.criterion = getattr(nn, args.criterion[0])() # the trailing () matters
     args.dev = torch.device(args.dev[0])
-    model = ut.get_model(args, sets)
+    model = ut.get_model(args)
     
     if args.chkpt_pth:
         ut.load_chkpt(args, model)

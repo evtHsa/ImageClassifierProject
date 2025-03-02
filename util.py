@@ -63,7 +63,7 @@ def get_classifier():
     classifier = nn.Sequential(dict)
     return classifier
     
-def get_model(args, sets):
+def get_model(args):
     mod_name = args.model[0]
     ctor = getattr(models, mod_name)
     model = ctor(pretrained=True)
