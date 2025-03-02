@@ -5,6 +5,7 @@ from torch import optim
 from torchvision import datasets, transforms, models
 import math
 from collections import OrderedDict
+import json
 
 loaders = dict()
 sets = dict()
@@ -126,3 +127,9 @@ def common_train_predict_args(parser):
     parser.add_argument('--dev', nargs=1, choices=['cpu', 'cuda'], default='cpu')
     parser.add_argument('--model', nargs=1, choices=['vgg16'], default='vgg16')
     parser.add_argument('--chkpt-pth', action="store",  default='/tmp/chkpt.pth')
+
+def get_cat_to_name():
+    with open('cat_to_name.json', 'r') as f:
+        cat_to_name = json.load(f)
+    return cat_to_name
+    

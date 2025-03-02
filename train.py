@@ -111,9 +111,6 @@ def main(args):
     
     ut.show_loader_info(args, sets, ldrs)
     
-    with open('cat_to_name.json', 'r') as f:
-        cat_to_name = json.load(f)
-
     args.criterion = getattr(nn, args.criterion[0])() # the trailing () matters
     args.dev = torch.device(args.dev[0])
     model = ut.get_model(args)
