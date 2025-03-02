@@ -6,7 +6,16 @@ from torchvision import datasets, transforms, models
 import math
 from collections import OrderedDict
 
-def build_data_loaders(args, sets, loaders):
+loaders = dict()
+sets = dict()
+
+def get_loaders():
+    return loaders
+
+def get_sets():
+    return sets
+
+def build_data_loaders(args):
     # simplified from part 1
     train_xform = transforms.Compose([transforms.RandomRotation(30),
                                       transforms.RandomResizedCrop(224),

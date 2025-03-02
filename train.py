@@ -109,9 +109,11 @@ def do_train(args, loaders, model):
                 model.train()
                 
 def main(args):
-    sets = dict()
-    ldrs = dict()
-    ut.build_data_loaders(args, sets, ldrs)
+    ut.build_data_loaders(args)
+    
+    sets = ut.get_sets()
+    ldrs = ut.get_loaders()
+    
     ut.show_loader_info(args, sets, ldrs)
     
     with open('cat_to_name.json', 'r') as f:
