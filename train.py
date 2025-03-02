@@ -2,14 +2,9 @@
 
 #python train.py --data-dir ~/tmp/flowers --epochs 12 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 50 --optimizer Adam --chkpt-every 100
 #
-import matplotlib.pyplot as plt
 from collections import OrderedDict
 import os
-import numpy as np
-from PIL import Image
 import argparse
-import seaborn as sb
-import json
 import util as ut
 import torch
 from torch import nn
