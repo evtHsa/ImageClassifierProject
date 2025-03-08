@@ -1,5 +1,5 @@
 #
-# python predict.py --data-dir ~/tmp/flowers --dev cpu --chkpt-pth /home/evt/wrk/udacity/trash/saved_chkpt.pth --img-path test/21/image_06805.jpg
+# predict.py --data-dir ~/tmp/flowers/test --dev cpu --chkpt-pth /home/evt/wrk/udacity/trash/saved_chkpt.pth --img-path test/21/image_06805.jpg --num-random-imgs 3
 #
 import torch
 from PIL import Image
@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import argparse
 import util as ut
 import numpy as np
+import os
+import random
 
 def get_scaled_image(image_path):
     im = Image.open(image_path)
@@ -92,32 +94,53 @@ def predict(image_path, model, topkl):
     
     return probs, classes
 
+def get_random_images(args):
 
-def test(img_path, model):
-    image = process_image(img_path)
-    imshow(image)
+    # get a list of all file names
+    hit_list = []
+
+    for root, dirs, files in os.walk(args.data_dir):
+        for file in files:
+            if file.lower().endswith(".jpg"):
+                hit_list.append(os.path.join(root, file))
+    # pick N at random and return in a list
+    return random.sample(hit_list, int(args.num_random_imgs))
+
+def test(args, model):
+    path_list = list()
+    if not args.num_random_imgs:
+        path_list.append(args.data_dir + '/' + args.img_path)
+    else:
+        path_list = get_random_images(args)
+
+    import pdb;pdb.set_trace
+    for img_path in path_list:
+        image = process_image(img_path)
+        imshow(image)
     
-    probs, classes = predict(img_path, model, 5)
-    cat_to_name = ut.get_cat_to_name()
-    class_names = [cat_to_name [item] for item in classes]
-    plt.figure(figsize = (6,10))
-    plt.subplot(2,1,2)
-    probs = np.reshape(probs, -1)
-    sb.barplot(x=probs, y=class_names, color= 'red');
-    plt.show()
+        probs, classes = predict(img_path, model, 5)
+        cat_to_name = ut.get_cat_to_name()
+        class_names = [cat_to_name [item] for item in classes]
+        plt.figure(figsize = (6,10))
+        plt.subplot(2,1,2)
+        probs = np.reshape(probs, -1)
+        sb.barplot(x=probs, y=class_names, color= 'red');
+        plt.show()
 
 def main(args):
     
     model = ut.get_model(args)
     ut.load_chkpt(args, model)
     model.to(args.dev[0]);    
-    test(args.data_dir + '/' + args.img_path, model)
+    test(args, model)
 
 #############################################################################
 parser = argparse.ArgumentParser(description='Example with long option names')
 ut.common_train_predict_args(parser)
 parser.add_argument('--img-path', action="store", default='')
+parser.add_argument('--num-random-imgs', action="store", default=0)
 
 args = parser.parse_args()
 
+import pdb;pdb.set_trace
 main(args)
