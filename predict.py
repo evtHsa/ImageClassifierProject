@@ -94,8 +94,8 @@ def predict(image_path, model, topkl):
     return probs, classes
 
 
-def test(model):
-    img_fname = args.data_dir + '/' + 'train/1/image_06734.jpg'
+def test(mode, img_path):
+    img_fname = args.data_dir + '/' + img_path
     image = process_image(img_fname)
     imshow(image)
     
@@ -114,11 +114,12 @@ def main(args):
     ut.load_chkpt(args, model)
     import pdb;pdb.set_trace()
     model.to(args.dev[0]);    
-    test(model)
+    test(args.data_dir + "/" + args.img_path, model)
 
 #############################################################################
 parser = argparse.ArgumentParser(description='Example with long option names')
 ut.common_train_predict_args(parser)
+parser.add_argument('--img-path', action="store", default='')
 
 args = parser.parse_args()
 
