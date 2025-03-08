@@ -65,7 +65,7 @@ def get_classifier():
     return classifier
     
 def get_model(args):
-    mod_name = args.model[0]
+    mod_name = args.model
     ctor = getattr(models, mod_name)
     model = ctor(pretrained=True)
     model.arch = mod_name
@@ -82,7 +82,7 @@ def load_chkpt(args, model):
     else: #map_location=torch.device("cpu"
         checkpoint = torch.load(args.chkpt_pth, map_location=torch.device("cpu"))
         
-    assert(checkpoint['arch'] == args.model[0])
+    assert(checkpoint['arch'] == args.model)
     
         
     model.arch         = checkpoint['arch'] 
