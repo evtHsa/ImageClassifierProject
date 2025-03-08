@@ -1,6 +1,8 @@
 #
-
-#python train.py --data-dir ~/tmp/flowers --epochs 12 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 50 --optimizer Adam --chkpt-every 100
+# try much lower learning rate
+# python train.py --data-dir ~/tmp/flowers --epochs 100 --batch-size 16 --lr 0.00005 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 50 --optimizer Adam --chkpt-every 100 --start-from-chkpt
+#
+# python train.py --data-dir ~/tmp/flowers --epochs 40 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 50 --optimizer Adam --chkpt-every 100 --start-from-chkpt
 #
 from collections import OrderedDict
 import os
@@ -38,10 +40,15 @@ def save_chkpt(model, epoch, step):
     torch.save(checkpoint, args.chkpt_pth)
 
 def do_train(args, loaders, model):
-    if model.step:
+    if hasattr(model, 'step'):
         steps = model.step
     else:
         steps = 0
+    if hasattr(model, 'epoch'):
+        start_epoch = model.epoch
+    else:
+        start_epoch = 0
+        
     running_loss = 0
     chkpt_every = 10
     t0 = time.time()
@@ -52,7 +59,7 @@ def do_train(args, loaders, model):
     optimizer_ctor = getattr(torch.optim, args.optimizer[0])
     optimizer = optimizer_ctor(model.classifier.parameters(), lr=args.lr)
 
-    for epoch in range(model.epoch, args.epochs): 
+    for epoch in range(start_epoch, args.epochs): 
         print("epoch: " + str(epoch))
 
         for inputs, labels in train_ldr:
@@ -99,6 +106,8 @@ def do_train(args, loaders, model):
                          'test_accuracy' : f"{accuracy/len(test_ldr):.3f}"}
 
                 print(stats)
+                if not hasattr(model,'losslog'):
+                    model.losslog = list()
                 model.losslog.append(stats)
                 running_loss = 0
                 model.train()
@@ -115,14 +124,13 @@ def main(args):
     args.dev = torch.device(args.dev[0])
     model = ut.get_model(args)
     model.class_to_idx = sets['train'].class_to_idx #all sets have it, pick this one
-    model.classifier = nn.Sequential(get_classifier())
+    model.classifier = nn.Sequential(ut.get_classifier())
     model.criterion = args.criterion
-    
-    if args.chkpt_pth:
+
+    if args.start_from_chkpt:
         ut.load_chkpt(args, model)
 
-    ut.do_test(args, model)
-    model.to(args.dev[0]);    
+    model.to(args.dev);    
     do_train(args, ldrs, model)
 
 
@@ -134,6 +142,7 @@ parser.add_argument('--epochs', type=gte_0, action="store", default=3)
 parser.add_argument('--batch-size', type=gt_0, action="store", default=16)
 parser.add_argument('--lr', type=range_0_1, action="store", default=16)
 parser.add_argument('--criterion', nargs=1, choices=['NLLLoss'], default='NLLLoss')
+parser.add_argument('--start-from-chkpt', action='store_true')
 parser.add_argument('--optimizer', nargs=1, choices=['Adam'], default='Adam')
 parser.add_argument('--chkpt-every', action="store",  default=25,
                     help="checckpoint every this many training steps")
