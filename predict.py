@@ -1,6 +1,5 @@
-#python predict.py --data-dir ~/tmp/flowers --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth
 #
-# python train.py --data-dir ~/tmp/flowers --epochs 11 --batch-size 16 --lr 0.003 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 12 --optimizer Adam --chkpt-every 100 --start-from-chkpt
+# python predict.py --data-dir ~/tmp/flowers --dev cpu --chkpt-pth /home/evt/wrk/udacity/trash/saved_chkpt.pth --img-path test/21/image_06805.jpg
 #
 import torch
 from PIL import Image
@@ -94,12 +93,11 @@ def predict(image_path, model, topkl):
     return probs, classes
 
 
-def test(mode, img_path):
-    img_fname = args.data_dir + '/' + img_path
-    image = process_image(img_fname)
+def test(img_path, model):
+    image = process_image(img_path)
     imshow(image)
     
-    probs, classes = predict(img_fname, model, 5)
+    probs, classes = predict(img_path, model, 5)
     cat_to_name = ut.get_cat_to_name()
     class_names = [cat_to_name [item] for item in classes]
     plt.figure(figsize = (6,10))
@@ -112,9 +110,8 @@ def main(args):
     
     model = ut.get_model(args)
     ut.load_chkpt(args, model)
-    import pdb;pdb.set_trace()
     model.to(args.dev[0]);    
-    test(args.data_dir + "/" + args.img_path, model)
+    test(args.data_dir + '/' + args.img_path, model)
 
 #############################################################################
 parser = argparse.ArgumentParser(description='Example with long option names')
