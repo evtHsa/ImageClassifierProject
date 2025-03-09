@@ -1,6 +1,8 @@
 #
 # predict.py --data-dir ~/tmp/flowers/test --dev cpu --chkpt-pth /home/evt/wrk/udacity/trash/saved_chkpt.pth --img-path test/21/image_06805.jpg --num-random-imgs 3
 #
+# python predict.py --data-dir ~/tmp/flowers/test --dev cpu --chkpt-pth /home/evt/wrk/udacity/trash/saved_chkpt.pth --img-path 21/image_06805.jpg
+#
 import torch
 from PIL import Image
 import seaborn as sb
@@ -124,6 +126,10 @@ def test(args, model):
         plt.figure(figsize = (6,10))
         plt.subplot(2,1,2)
         probs = np.reshape(probs, -1)
+
+        for i in range(len(probs)):
+            print(f"{class_names[i]}: probability: {probs[i]:e}")
+
         sb.barplot(x=probs, y=class_names, color= 'red');
         plt.show()
 
