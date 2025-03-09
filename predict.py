@@ -1,3 +1,4 @@
+#python predict.py --data-dir ~/tmp/flowers/test --dev cpu --chkpt-pth /home/evt/wrk/udacity/trash/saved_chkpt.pth --img-path 21/image_06805.jpg --top-k 3
 #
 # predict.py --data-dir ~/tmp/flowers/test --dev cpu --chkpt-pth /home/evt/wrk/udacity/trash/saved_chkpt.pth --img-path test/21/image_06805.jpg --num-random-imgs 3
 #
@@ -120,7 +121,7 @@ def test(args, model):
         image = process_image(img_path)
         imshow(image)
     
-        probs, classes = predict(img_path, model, 5)
+        probs, classes = predict(img_path, model, int(args.top_k))
         cat_to_name = ut.get_cat_to_name()
         class_names = [cat_to_name [item] for item in classes]
         plt.figure(figsize = (6,10))
@@ -145,6 +146,7 @@ parser = argparse.ArgumentParser(description='Example with long option names')
 ut.common_train_predict_args(parser)
 parser.add_argument('--img-path', action="store", default='')
 parser.add_argument('--num-random-imgs', action="store", default=0)
+parser.add_argument('--top-k', action="store", default=5)
 
 args = parser.parse_args()
 
