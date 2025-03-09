@@ -120,10 +120,14 @@ def do_test(args, model):
     print(f"Accuracy of the network on the {img_cnt} test images {accuracy}%")
 
 def common_train_predict_args(parser):
-    parser.add_argument('--data-dir', action="store", default='')
-    parser.add_argument('--dev', nargs=1, choices=['cpu', 'cuda'], default='cpu')
-    parser.add_argument('--model', nargs=1, choices=['vgg16'], default='vgg16')
-    parser.add_argument('--chkpt-pth', action="store",  default='/tmp/chkpt.pth')
+    parser.add_argument('--data-dir', action="store", default='',
+                        help = "where the flowers jps are(no trailing /)")
+    parser.add_argument('--dev', nargs=1, choices=['cpu', 'cuda'], default='cpu',
+                        help = "run model where?")
+    parser.add_argument('--model', nargs=1, choices=['vgg16'], default='vgg16',
+                        help="model name to import from torch")
+    parser.add_argument('--chkpt-pth', action="store",  default='/tmp/chkpt.pth',
+                        help="the path of the checkpoint file")
 
 def get_cat_to_name():
     with open('cat_to_name.json', 'r') as f:

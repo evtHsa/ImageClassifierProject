@@ -144,9 +144,13 @@ def main(args):
 #############################################################################
 parser = argparse.ArgumentParser(description='Example with long option names')
 ut.common_train_predict_args(parser)
-parser.add_argument('--img-path', action="store", default='')
-parser.add_argument('--num-random-imgs', action="store", default=0)
-parser.add_argument('--top-k', action="store", default=5)
+parser.add_argument('--img-path', action="store", default='',
+                    help='path to jpg file to classify(if not using num-ramdom-imgs')
+parser.add_argument('--num-random-imgs', action="store", default=1,
+                    help="how many images to classify")
+
+parser.add_argument('--top-k', action="store", default=3,
+                    help="how many probabilities to show")
 
 args = parser.parse_args()
 

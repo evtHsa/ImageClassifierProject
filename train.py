@@ -139,12 +139,18 @@ def main(args):
 parser = argparse.ArgumentParser(description='Example with long option names')
 ut.common_train_predict_args(parser)
 
-parser.add_argument('--epochs', type=gte_0, action="store", default=3)
-parser.add_argument('--batch-size', type=gt_0, action="store", default=16)
-parser.add_argument('--lr', type=range_0_1, action="store", default=16)
-parser.add_argument('--criterion', nargs=1, choices=['NLLLoss'], default='NLLLoss')
-parser.add_argument('--start-from-chkpt', action='store_true')
-parser.add_argument('--optimizer', nargs=1, choices=['Adam'], default='Adam')
+parser.add_argument('--epochs', type=gte_0, action="store", default=3,
+                    help="1 epoch is 1 pass through the training data")
+parser.add_argument('--batch-size', type=gt_0, action="store", default=16,
+                    help="1 step through the training data")
+parser.add_argument('--lr', type=range_0_1, action="store", default=16,
+                    help="learning rate")
+parser.add_argument('--criterion', nargs=1, choices=['NLLLoss'], default='NLLLoss',
+                    help="the loss function")
+parser.add_argument('--start-from-chkpt', action='store_true',
+                    help="start from a saved checkpoint")
+parser.add_argument('--optimizer', nargs=1, choices=['Adam'], default='Adam',
+                    help="Used to adjust weights")
 parser.add_argument('--chkpt-every', action="store",  default=25,
                     help="checckpoint every this many training steps")
 parser.add_argument('--print-every', action="store",  default=25,
