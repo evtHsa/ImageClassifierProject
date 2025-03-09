@@ -1,3 +1,4 @@
+#python train.py --data-dir ~/tmp/flowers --epochs 500 --batch-size 16 --lr 0.00005 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 50 --optimizer Adam --chkpt-every 100 --start-from-chkpt
 #
 # try much lower learning rate
 # python train.py --data-dir ~/tmp/flowers --epochs 100 --batch-size 16 --lr 0.00005 --criterion NLLLoss --dev cpu --model vgg16 --chkpt-pth ~/wrk/udacity/trash/checkpoint.pth --print-every 50 --optimizer Adam --chkpt-every 100 --start-from-chkpt
